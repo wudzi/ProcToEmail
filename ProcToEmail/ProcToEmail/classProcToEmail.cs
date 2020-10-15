@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Net.Mail;
 using Sybase.Data.AseClient;
 using System.Data;
 using System.Data.SqlClient;
@@ -17,6 +18,7 @@ namespace ProcToEmail
         {
 
             bool outcome = true;
+            List<Attachment> attachments = new List<Attachment>();
             DataTable dt = new DataTable();
 
             if (udsQueueParameters.DatabaseType == "Sybase")
@@ -34,10 +36,11 @@ namespace ProcToEmail
                 string emailBody = System.IO.File.ReadAllText(udsQueueParameters.HTMLTemplate);
                 string emailAddress = row[udsQueueParameters.EmailField].ToString();
                 string id = row[udsQueueParameters.IDField].ToString();
+                string subject = row[udsQueueParameters.SubjectField].ToString();
 
                 if (udsQueueParameters.AutoParameters == 1)
                 {
-                    foreach(DataColumn col in dt.Columns)
+                    foreach (DataColumn col in dt.Columns)
                     {
                         string replaceVar = "[$" + col.ColumnName.ToString() + "$]";
                         string replacementText = row[col.ColumnName.ToString()].ToString();
@@ -54,6 +57,15 @@ namespace ProcToEmail
                     }
                 }
 
+                foreach (DataColumn col in dt.Columns)
+                {
+                    if (col.ColumnName.ToString().StartsWith("Attachment_"))
+                    {
+                        Attachment attachment = new Attachment(row[col.ColumnName.ToString()].ToString());
+                        attachments.Add(attachment);
+                    }
+                }
+
                 if (!emailAddress.Contains("@"))
                 {
                     LogMessage(udsQueueParameters.LogName, udsQueueParameters.LogDirectory, "Record: " + id + " does not have a valid email address");
@@ -66,7 +78,7 @@ namespace ProcToEmail
                         emailAddress = udsQueueParameters.DebugEmail;
                     }
 
-                    SendMail(udsQueueParameters.FromAddress, udsQueueParameters.FromName, emailAddress, udsQueueParameters.CCAddress, udsQueueParameters.BCCAddress, udsQueueParameters.Subject, emailBody, udsQueueParameters.SMTPServer, null);
+                    SendMail(udsQueueParameters.FromAddress, udsQueueParameters.FromName, emailAddress, udsQueueParameters.CCAddress, udsQueueParameters.BCCAddress, subject, emailBody, udsQueueParameters.SMTPServer, attachments);
                     LogMessage(udsQueueParameters.LogName, udsQueueParameters.LogDirectory, "Record: " + id + " successfully sent email to " + emailAddress);
                 }
             }

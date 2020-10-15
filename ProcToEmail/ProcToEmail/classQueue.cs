@@ -49,7 +49,8 @@ namespace ProcToEmail
 
         public void Start(object State)
         {
-            string sRunTime;
+            //string sRunTime;
+            //string sRunDay;
             Thread thMain;
             XmlDocument xdOptionsDoc = new XmlDocument();
             string sErrorText = "";
@@ -57,7 +58,9 @@ namespace ProcToEmail
             string[] sParts;
             int iStartHour;
             int iStartMinute;
-            DateTime dtEnd;
+            List<string> lRunDays = null;
+            List<string> lRunTimes = null;
+            //List<DateTime> dtEnd = new List<DateTime>();
             SortedDictionary<string, int> sdRetryList = new SortedDictionary<string, int>();
 
             bStopRequest = false;
@@ -71,9 +74,16 @@ namespace ProcToEmail
                 sQueueName = GetSingleNode_Str(xdOptionsDoc, ("//@Name"));
                 if (thMain.Name == null)
                     thMain.Name = sQueueName;
-                sRunTime = GetSingleNode_Str(xdOptionsDoc, ("//@RunTime"));
-                if (sRunTime.ToUpper() == "NOW")
-                    sRunTime = DateTime.Now.ToShortTimeString();
+                if (GetSingleNode_Str(xdOptionsDoc, ("//@RunTime")) != "" && GetSingleNode_Str(xdOptionsDoc, ("//@RunTime")) != null)
+                {
+                    lRunTimes = GetSingleNode_Str(xdOptionsDoc, ("//@RunTime")).Split(',').ToList();
+                }
+                //if (sRunTime.ToUpper() == "NOW")
+                //    sRunTime = DateTime.Now.ToShortTimeString();
+                if (GetSingleNode_Str(xdOptionsDoc, ("//@RunDay")) != "" && GetSingleNode_Str(xdOptionsDoc, ("//@RunDay")) != null)
+                {
+                    lRunDays = GetSingleNode_Str(xdOptionsDoc, ("//@RunDay")).Split(',').ToList();
+                }
             }
             catch (Exception ex)
             {
@@ -89,22 +99,52 @@ namespace ProcToEmail
             // Keep Processing the Queue until asked to stop
             while (bStopRequest == false)
             {
+                bool bTimeinRange = false;
+                bool bDayinRange = false;
 
                 // Generate a processing end time [2 minutes after the Run Time]
-                if (sRunTime == "")
-                    dtEnd = default(DateTime);
+                if (lRunTimes == null)
+                {
+                    bTimeinRange = true;
+                }
                 else
                 {
-                    if (ValidTime(sRunTime) == false)
-                        throw new ApplicationException("Invalid run time: " + sRunTime);
-                    sParts = sRunTime.Split(new[] { ":" }, StringSplitOptions.None);
-                    iStartHour = System.Convert.ToInt32(sParts[0]);
-                    iStartMinute = System.Convert.ToInt32(sParts[1]);
-                    dtEnd = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, iStartHour, iStartMinute, 0).AddMinutes(2);
+                    foreach (string sRunTime in lRunTimes)
+                    {
+                        if (ValidTime(sRunTime) == false)
+                            throw new ApplicationException("Invalid run time: " + sRunTime);
+
+                        sParts = sRunTime.Split(new[] { ":" }, StringSplitOptions.None);
+                        iStartHour = System.Convert.ToInt32(sParts[0]);
+                        iStartMinute = System.Convert.ToInt32(sParts[1]);
+                        DateTime dtEnd = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, iStartHour, iStartMinute, 0).AddMinutes(2);
+                        if (InTimeRange(StringToDate(sRunTime), dtEnd))
+                        {
+                            bTimeinRange = true;
+                        }
+
+
+                        //dtEnd.Add = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, iStartHour, iStartMinute, 0).AddMinutes(2);
+                    }
+                }
+
+                if (lRunDays == null)
+                {
+                    bDayinRange = true;
+                }
+                else
+                {
+                    foreach (string sRunDay in lRunDays)
+                    {
+                        if (DateTime.Now.ToString("dddd") == sRunDay)
+                        {
+                            bDayinRange = true;
+                        }
+                    }
                 }
 
                 // Determine if it's time to run ...
-                if ((sRunTime == "") | (InTimeRange(StringToDate(sRunTime), dtEnd)))
+                if (bDayinRange && bTimeinRange)
                 {
                     try
                     {
@@ -114,18 +154,9 @@ namespace ProcToEmail
                         oWork.Begin(sServiceName, sQueueData, ref sdRetryList);
                         oWork.ProcessQueue(ref bStopRequest, ref dtLastPurgeCheck);
                         oWork = null;
+                        Thread.Sleep(120000);
+                        //bStopRequest = true;
 
-                        // Pause until the end time has been reached
-                        if (sRunTime != "")
-                        {
-                            //while (DateTime.DateDiff(DateInterval.Second, DateTime.Now, dtEnd) >= 0)
-                            while ((DateTime.Now - dtEnd).TotalSeconds >= 0)
-                            {
-                                Thread.Sleep(3000);
-                                if (bStopRequest)
-                                    break;
-                            }
-                        }
                     }
                     catch (Exception ex)
                     {

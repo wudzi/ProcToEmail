@@ -6,7 +6,7 @@ using System.Threading;
 using System.ComponentModel;
 using System.Net.Mail;
 using System.Collections;
-
+using System.Collections.Generic;
 
 static class classStandardRoutines
 {
@@ -537,7 +537,7 @@ static class classStandardRoutines
         }
     }
 
-    internal static void SendMail(string sFrom, string EmailFrom, string EmailAddress, string CCAddress, string BCCAddress, string sSubject, string sBody, string SMTPServer, Attachment Attachment)
+    internal static void SendMail(string sFrom, string EmailFrom, string EmailAddress, string CCAddress, string BCCAddress, string sSubject, string sBody, string SMTPServer, List<Attachment> attachments)
     {
         MailMessage oMail = new MailMessage();
 
@@ -554,9 +554,12 @@ static class classStandardRoutines
         oMail.Subject = sSubject;
         oMail.Body = sBody;
         oMail.IsBodyHtml = true;
-        if (Attachment != null)
+        if (attachments != null)
         {
-            oMail.Attachments.Add(Attachment);
+            foreach (Attachment attachment in attachments)
+            {
+                oMail.Attachments.Add(attachment);
+            }
         }
         System.Net.Mail.AlternateView htmlView = System.Net.Mail.AlternateView.CreateAlternateViewFromString(sBody, null, "text/html");
 
@@ -734,51 +737,51 @@ static class classStandardRoutines
         return bReturn;
     }
 
-    public static bool InTimeRange(string sStartTime, string sEndTime)
-    {
+    //public static bool InTimeRange(string sStartTime, string sEndTime)
+    //{
 
-        // Expects times in the form "14:32"
+    //    // Expects times in the form "14:32"
 
-        bool bReturn = false;
+    //    bool bReturn = false;
 
-        DateTime dtNow;
-        DateTime dtStart;
-        DateTime dtEnd;
-        string[] sParts;
-        int iStartHour;
-        int iStartMinute;
-        int iEndHour;
-        int iEndMinute;
+    //    DateTime dtNow;
+    //    DateTime dtStart;
+    //    DateTime dtEnd;
+    //    string[] sParts;
+    //    int iStartHour;
+    //    int iStartMinute;
+    //    int iEndHour;
+    //    int iEndMinute;
 
-        try
-        {
-            sParts = sStartTime.Split(new[] { ":" }, StringSplitOptions.None);
-            iStartHour = System.Convert.ToInt32(sParts[0]);
-            iStartMinute = System.Convert.ToInt32(sParts[1]);
+    //    try
+    //    {
+    //        sParts = sStartTime.Split(new[] { ":" }, StringSplitOptions.None);
+    //        iStartHour = System.Convert.ToInt32(sParts[0]);
+    //        iStartMinute = System.Convert.ToInt32(sParts[1]);
 
-            sParts = sEndTime.Split(new[] { ":" }, StringSplitOptions.None);
-            iEndHour = System.Convert.ToInt32(sParts[0]);
-            iEndMinute = System.Convert.ToInt32(sParts[1]);
+    //        sParts = sEndTime.Split(new[] { ":" }, StringSplitOptions.None);
+    //        iEndHour = System.Convert.ToInt32(sParts[0]);
+    //        iEndMinute = System.Convert.ToInt32(sParts[1]);
 
-            dtStart = new DateTime(2000, 1, 1, iStartHour, iStartMinute, 0);
-            dtEnd = new DateTime(2000, 1, 1, iEndHour, iEndMinute, 0);
+    //        dtStart = new DateTime(2000, 1, 1, iStartHour, iStartMinute, 0);
+    //        dtEnd = new DateTime(2000, 1, 1, iEndHour, iEndMinute, 0);
 
-            if (dtEnd < dtStart)
-                dtEnd = dtEnd.AddHours(24);
+    //        if (dtEnd < dtStart)
+    //            dtEnd = dtEnd.AddHours(24);
 
-            dtNow = new DateTime(2000, 1, 1, DateTime.Now.Hour, DateTime.Now.Minute, 0);
-            if (dtNow < dtStart)
-                dtNow = dtNow.AddHours(24);
+    //        dtNow = new DateTime(2000, 1, 1, DateTime.Now.Hour, DateTime.Now.Minute, 0);
+    //        if (dtNow < dtStart)
+    //            dtNow = dtNow.AddHours(24);
 
-            if (dtNow >= dtStart & dtNow <= dtEnd)
-                bReturn = true;
-        }
-        catch (Exception ex)
-        {
-        }
+    //        if (dtNow >= dtStart & dtNow <= dtEnd)
+    //            bReturn = true;
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //    }
 
-        return bReturn;
-    }
+    //    return bReturn;
+    //}
 
     public static bool InTimeRange(DateTime dtStartTime, DateTime dtEndTime)
     {

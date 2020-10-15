@@ -34,11 +34,11 @@ namespace ProcToEmail
             public string IDField;
             public string FromAddress;
             public string FromName;
-            public string Subject;
+            public string SubjectField;
             public string DebugEmail;
             public int DebugMode;
             public string SMTPServer;
-            public int WaitTime;
+            //public int WaitTime;
             public List<ParameterMapping> ParameterMappings;
             public List<InputParameter> InputParameters;
 
@@ -81,8 +81,8 @@ namespace ProcToEmail
             udsQueueParameters.BCCAddress = GetSingleNode_Str(xdOptionsDoc, ("//BCCAddress"));
             udsQueueParameters.FromAddress = GetSingleNode_Str(xdOptionsDoc, ("//FromAddress"));
             udsQueueParameters.FromName = GetSingleNode_Str(xdOptionsDoc, ("//FromName"));
-            udsQueueParameters.Subject = GetSingleNode_Str(xdOptionsDoc, ("//Subject"));
-            udsQueueParameters.WaitTime = GetSingleNode_Int(xdOptionsDoc, ("//WaitTime"));
+            udsQueueParameters.SubjectField = GetSingleNode_Str(xdOptionsDoc, ("//SubjectField"));
+            //udsQueueParameters.WaitTime = GetSingleNode_Int(xdOptionsDoc, ("//WaitTime"));
             udsQueueParameters.DebugEmail = GetSingleNode_Str(xdOptionsDoc, ("//DebugEmail"));
             udsQueueParameters.DebugMode = GetSingleNode_Int(xdOptionsDoc, ("//DebugMode"));
             udsQueueParameters.SMTPServer = GetSingleNode_Str(xdOptionsDoc, ("//SMTPServer"));
@@ -119,7 +119,7 @@ namespace ProcToEmail
             // Prepare for Logging
             CreateLogFile(udsQueueParameters.LogName, udsQueueParameters.LogDirectory);
 
-            LogMessage(udsQueueParameters.LogName, udsQueueParameters.LogDirectory, "Processing Queue: " + udsQueueParameters.QueueName);
+            LogMessage(udsQueueParameters.LogName, udsQueueParameters.LogDirectory, "Queue: " + udsQueueParameters.QueueName + " started processing");
             try { 
             bool outcome = ProcessRecords(udsQueueParameters);
                 if (outcome == true)
@@ -136,7 +136,7 @@ namespace ProcToEmail
             }
 
             // Wait for 2 minutes so process doesn't run again
-            Thread.Sleep(udsQueueParameters.WaitTime * 1000);
+            //Thread.Sleep(udsQueueParameters.WaitTime * 1000);
         }
            
     }
